@@ -1,0 +1,16 @@
+{
+  "name": "mess-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "diff": "supabase db diff --local --schema public",
+    "migration": "supabase db diff --local --schema public -f",
+    "reset-db": "supabase db reset --local",
+    "migrate": "supabase migration up --local",
+    "generate": "supabase gen types typescript --local > supabase/functions/common/types.ts",
+    "functions": "supabase functions serve --env-file .env --import-map supabase/functions/import_map.json"
+  },
+  "author": "",
+  "license": "ISC"
+}
