@@ -1,26 +1,33 @@
 package main
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/KRTirtho/mess-backend/passer/core/collections"
-	"github.com/supabase-community/supabase-go"
+	"github.com/KRTirtho/mess-backend/passer/core/ws"
+	"github.com/gin-gonic/gin"
+	"github.com/nedpals/supabase-go"
 )
 
 // Supabase client with service role key
 var SupabaseServerClient *supabase.Client
-var Env collections.Env
 
 func main() {
 	log.SetFlags(0)
 
-	Env = *collections.NewEnv()
+	collections.Env = collections.NewEnv()
 
-	client, err := supabase.NewClient(Env.SupabaseURL, Env.SupabaseServiceKey, nil)
-	if err != nil {
-		fmt.Println("cannot initialize client", err)
-	}
+	client := supabase.CreateClient(collections.Env.SupabaseURL, collections.Env.SupabaseServiceKey, true)
 
 	SupabaseServerClient = client
+
+	router := gin.Default()
+
+	hub := ws.NewWebsocketHub()
+
+	go hub.Run()
+
+	router.GET("/ws", hub.HandleWebsocketConnection)
+
+	log.Fatal(router.Run(collections.Env.Port))
 }
