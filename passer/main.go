@@ -13,8 +13,6 @@ import (
 var SupabaseServerClient *supabase.Client
 
 func main() {
-	log.SetFlags(0)
-
 	collections.Env = collections.NewEnv()
 
 	client := supabase.CreateClient(collections.Env.SupabaseURL, collections.Env.SupabaseServiceKey, true)
@@ -28,6 +26,11 @@ func main() {
 	go hub.Run()
 
 	router.GET("/ws", hub.HandleWebsocketConnection)
+	router.GET("/", func(ctx *gin.Context) {
+		ctx.JSON(200, gin.H{
+			"message": "Hello, World!",
+		})
+	})
 
 	log.Fatal(router.Run(collections.Env.Port))
 }

@@ -16,37 +16,42 @@ type WebsocketHub struct {
 }
 
 func NewWebsocketHub() *WebsocketHub {
-	return &WebsocketHub{}
+	return &WebsocketHub{
+		connections: make(map[string]*websocket.Conn),
+		clients:     make(map[string]*supabase.Client),
+	}
 }
 
 func (hub *WebsocketHub) addConnection(userId string, conn *websocket.Conn) {
 	hub.Lock()
+	defer hub.Unlock()
 	hub.connections[userId] = conn
-	hub.Unlock()
 }
 
 func (hub *WebsocketHub) removeConnection(userId string) {
 	hub.Lock()
+	defer hub.Unlock()
 	delete(hub.connections, userId)
-	hub.Unlock()
 }
 
 func (hub *WebsocketHub) getConnection(userId string) (*websocket.Conn, error) {
 	hub.RLock()
+	defer hub.RUnlock()
+
 	conn, ok := hub.connections[userId]
 
 	if !ok {
 		return nil, errors.New("connection not found")
 	}
 
-	defer hub.RUnlock()
 	return conn, nil
 }
 
 func (hub *WebsocketHub) addClient(userId string, client *supabase.Client) {
 	hub.Lock()
+	defer hub.Unlock()
+
 	hub.clients[userId] = client
-	hub.Unlock()
 }
 
 func (hub *WebsocketHub) removeClient(userId string) {
@@ -57,12 +62,13 @@ func (hub *WebsocketHub) removeClient(userId string) {
 
 func (hub *WebsocketHub) getClient(userId string) (*supabase.Client, error) {
 	hub.RLock()
+	defer hub.RUnlock()
+
 	client, ok := hub.clients[userId]
 
 	if !ok {
 		return nil, errors.New("client not found")
 	}
 
-	defer hub.RUnlock()
 	return client, nil
 }
