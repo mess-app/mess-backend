@@ -10,7 +10,7 @@
       "type": "go",
       "request": "launch",
       "mode": "auto",
-      "program": "${workspaceFolder}/main.go",
+      "program": "${workspaceFolder}/passer/main.go",
       "env": {},
       "args": []
     },

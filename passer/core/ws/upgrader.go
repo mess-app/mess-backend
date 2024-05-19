@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/KRTirtho/mess-backend/passer/core/collections"
+	"github.com/KRTirtho/mess-backend/passer/core/collections/tables"
 	"github.com/KRTirtho/mess-backend/passer/core/models"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -19,12 +19,10 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-func (hub *WebsocketHub) HandleWebsocketConnection(
-	context *gin.Context,
-) {
-	authorizationHeader := strings.Split(context.GetHeader("Authorization"), "Bearer ")[1]
+func (hub *WebsocketHub) HandleWebsocketConnection(context *gin.Context) {
+	authorizationHeader, ok := context.GetQuery("token")
 
-	if authorizationHeader == "" {
+	if !ok {
 		context.JSON(http.StatusUnauthorized, gin.H{
 			"error": "Unauthorized",
 		})
@@ -48,9 +46,30 @@ func (hub *WebsocketHub) HandleWebsocketConnection(
 
 	}
 
+	profile := models.SupabaseProfileId{}
+
+	err = client.DB.From(tables.Profile).
+		Select("id").
+		Single().
+		Eq("user_id", user.ID).
+		Execute(&profile)
+
+	if err != nil {
+		context.JSON(http.StatusUnauthorized, gin.H{
+			"error": "Unauthorized",
+		})
+		return
+	}
+
+	context.Set("profileId", profile.Id)
+	context.Set("userId", user.ID)
+
 	connection, err := upgrader.Upgrade(context.Writer, context.Request, nil)
 
 	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Internal Server Error",
+		})
 		return
 	}
 
@@ -95,7 +114,7 @@ func (hub *WebsocketHub) HandleWebsocketConnection(
 				Data:  data,
 			}
 
-			hub.OnWebsocketEvent(event, user.ID)
+			hub.OnWebsocketEvent(context, event)
 		} else {
 			fmt.Println("Unknown message type from ", user.ID)
 		}

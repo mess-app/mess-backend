@@ -1,3 +1,6 @@
 /node_modules
 *.env*
 !.env.example
+
+# ignore go debug files
+**/__debug_bin*
